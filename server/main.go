@@ -352,6 +352,11 @@ func main() {
 		http.ServeFile(w, r, "./installer/install.sh")
 	})
 
+	// Serve the Windows PowerShell install script directly
+	mux.HandleFunc("/install.ps1", func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFile(w, r, "./installer/install.ps1")
+	})
+
 	// Serve compiled binaries for download
 	mux.Handle("/releases/", http.StripPrefix("/releases/", http.FileServer(http.Dir("./releases"))))
 

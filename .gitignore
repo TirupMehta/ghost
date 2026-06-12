@@ -2,6 +2,7 @@
 *.exe
 /ghost-server
 /ghost
+ghost_*
 
 # Logs
 *.log

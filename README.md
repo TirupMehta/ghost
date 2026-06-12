@@ -134,17 +134,23 @@ On first run, Ghost will prompt for your handle and save it to `~/.ghost/config.
 
 ## Installer
 
-Distribute and install the client using the single-command bash installer hosted directly on your server:
+Distribute and install the client using the single-command installer hosted directly on your server:
 
+#### macOS / Linux (Bash)
 ```bash
 curl -fsSL https://ghost.tirup.in/install.sh | bash
 ```
 
+#### Windows (PowerShell)
+```powershell
+irm https://ghost.tirup.in/install.ps1 | iex
+```
+
 The installer:
-1. Detects OS + CPU architecture (linux/darwin/windows × amd64/arm64/arm/386)
+1. Detects OS + CPU architecture (or defaults to Windows x64)
 2. Downloads the correct pre-built binary directly from your server's `/releases/` path
-3. Installs to `~/.local/bin`, `~/bin`, or `/usr/local/bin`
-4. Runs `ghost --setup` to configure the handle on first install
+3. Installs to the local execution path (`~/.local/bin` on Unix, `~/.ghost/bin` on Windows) and adds it to the user PATH
+4. Runs handle configuration setup on first install
 
 ---
 
