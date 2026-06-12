@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"net/url"
 	"os"
@@ -286,8 +287,8 @@ func createRoom() (string, error) {
 }
 
 // wsURL constructs the WebSocket URL for a given PIN.
-func wsURL(pin string) string {
-	u, _ := url.Parse(serverAddr)
+func wsURL(pin string, addr string) string {
+	u, _ := url.Parse(addr)
 	switch u.Scheme {
 	case "https":
 		u.Scheme = "wss"
@@ -307,9 +308,10 @@ func wsURL(pin string) string {
 
 // chatSession manages the WebSocket connection lifecycle for one active room.
 type chatSession struct {
-	handle string
-	pin    string
-	aesKey []byte // zeroed on Close
+	handle     string
+	pin        string
+	aesKey     []byte // zeroed on Close
+	serverAddr string
 
 	mu   sync.Mutex
 	ws   *websocket.Conn
@@ -321,14 +323,15 @@ type chatSession struct {
 }
 
 // newChatSession creates a session but does not open the WebSocket yet.
-func newChatSession(handle, pin string, aesKey []byte) *chatSession {
+func newChatSession(handle, pin string, aesKey []byte, serverAddr string) *chatSession {
 	return &chatSession{
-		handle:   handle,
-		pin:      pin,
-		aesKey:   aesKey,
-		incoming: make(chan Message, 64),
-		outgoing: make(chan string, 64),
-		quit:     make(chan struct{}),
+		handle:     handle,
+		pin:        pin,
+		aesKey:     aesKey,
+		serverAddr: serverAddr,
+		incoming:   make(chan Message, 64),
+		outgoing:   make(chan string, 64),
+		quit:       make(chan struct{}),
 	}
 }
 
@@ -339,7 +342,7 @@ func (s *chatSession) connect() error {
 		HandshakeTimeout: 10 * time.Second,
 	}
 
-	ws, _, err := dialer.Dial(wsURL(s.pin), nil)
+	ws, _, err := dialer.Dial(wsURL(s.pin, s.serverAddr), nil)
 	if err != nil {
 		return fmt.Errorf("dial: %w", err)
 	}
@@ -665,6 +668,53 @@ func validatePIN(pin string) error {
 	return nil
 }
 
+// discoverLocalServer sends a UDP broadcast to locate a Ghost relay server
+// serving the specified PIN on the local network.
+func discoverLocalServer(pin string) (string, error) {
+	broadcastAddr, err := net.ResolveUDPAddr("udp", "255.255.255.255:9090")
+	if err != nil {
+		return "", fmt.Errorf("resolve broadcast address: %w", err)
+	}
+
+	conn, err := net.ListenUDP("udp", &net.UDPAddr{IP: net.IPv4zero, Port: 0})
+	if err != nil {
+		return "", fmt.Errorf("listen UDP: %w", err)
+	}
+	defer conn.Close()
+
+	_ = conn.SetDeadline(time.Now().Add(2500 * time.Millisecond))
+
+	stopBroadcast := make(chan struct{})
+	go func() {
+		ticker := time.NewTicker(400 * time.Millisecond)
+		defer ticker.Stop()
+		msg := []byte("GHOST_DISCOVER:" + pin)
+		for {
+			select {
+			case <-ticker.C:
+				_, _ = conn.WriteTo(msg, broadcastAddr)
+			case <-stopBroadcast:
+				return
+			}
+		}
+	}()
+	defer close(stopBroadcast)
+
+	buf := make([]byte, 1024)
+	for {
+		n, remoteAddr, err := conn.ReadFromUDP(buf)
+		if err != nil {
+			return "", fmt.Errorf("read response (timeout): %w", err)
+		}
+
+		reply := string(buf[:n])
+		if reply == "GHOST_RESPONSE:"+pin {
+			ip := remoteAddr.IP.String()
+			return "http://" + ip + ":8080", nil
+		}
+	}
+}
+
 // ──────────────────────────────────────────────
 //  Create Room Flow
 // ──────────────────────────────────────────────
@@ -680,7 +730,6 @@ func flowCreate(cfg *Config) {
 		return
 	}
 
-	// Derive the AES-256 key from the PIN locally — never sent to the server.
 	aesKey := deriveKeyFromPIN(pin)
 
 	fmt.Println()
@@ -693,7 +742,7 @@ func flowCreate(cfg *Config) {
 	fmt.Println(dim("  Share this 6-digit PIN with your contact."))
 	fmt.Println(dim("  The encryption key is derived locally — server never sees it."))
 
-	enterRoom(cfg, pin, aesKey)
+	enterRoom(cfg, pin, aesKey, serverAddr)
 }
 
 // ──────────────────────────────────────────────
@@ -719,10 +768,18 @@ func flowJoin(cfg *Config) {
 		return
 	}
 
-	// Derive the AES-256 key from the PIN — same derivation as the creator.
+	fmt.Printf("\n  %s Searching local network for room %s...\n", dim("→"), pin)
+	resolvedServerAddr, err := discoverLocalServer(pin)
+	if err != nil {
+		fmt.Printf("  %s Local discovery failed (timeout). Defaulting to localhost.\n", yellow("!"))
+		resolvedServerAddr = "http://localhost:8080"
+	} else {
+		fmt.Printf("  %s Room found! Connecting to host at %s\n", green("✓"), resolvedServerAddr)
+	}
+
 	aesKey := deriveKeyFromPIN(pin)
 
-	enterRoom(cfg, pin, aesKey)
+	enterRoom(cfg, pin, aesKey, resolvedServerAddr)
 }
 
 // ──────────────────────────────────────────────
@@ -733,12 +790,10 @@ const maxRetries = 3
 
 // enterRoom connects to the relay with retries and runs the interactive chat
 // loop until the session ends or the retry budget is exhausted.
-func enterRoom(cfg *Config, pin string, aesKey []byte) {
-	// aesKey is passed in by both create and join paths.  We own it here and
-	// must zero it before returning.
+func enterRoom(cfg *Config, pin string, aesKey []byte, targetAddr string) {
 	defer zeroKey(aesKey)
 
-	session := newChatSession(cfg.Handle, pin, aesKey)
+	session := newChatSession(cfg.Handle, pin, aesKey, targetAddr)
 
 	for attempt := 1; attempt <= maxRetries; attempt++ {
 		if attempt > 1 {

@@ -6,8 +6,10 @@ import (
 	"fmt"
 	"log"
 	"math/big"
+	"net"
 	"net/http"
 	"runtime"
+	"strings"
 	"sync"
 	"time"
 
@@ -335,12 +337,49 @@ func handleHealth(w http.ResponseWriter, _ *http.Request) {
 	_ = json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
 }
 
+// startUDPResponder listens on UDP port 9090 for client discovery broadcasts.
+// If a broadcast matches a running PIN, it replies to confirm.
+func startUDPResponder(srv *server) {
+	addr, err := net.ResolveUDPAddr("udp", ":9090")
+	if err != nil {
+		log.Printf("UDP resolve error: %v", err)
+		return
+	}
+	conn, err := net.ListenUDP("udp", addr)
+	if err != nil {
+		log.Printf("UDP listen error: %v", err)
+		return
+	}
+	defer conn.Close()
+
+	buf := make([]byte, 1024)
+	for {
+		n, remoteAddr, err := conn.ReadFromUDP(buf)
+		if err != nil {
+			log.Printf("UDP read error: %v", err)
+			continue
+		}
+
+		msg := string(buf[:n])
+		if strings.HasPrefix(msg, "GHOST_DISCOVER:") {
+			pin := strings.TrimPrefix(msg, "GHOST_DISCOVER:")
+			if r := srv.getRoom(pin); r != nil {
+				reply := "GHOST_RESPONSE:" + pin
+				_, _ = conn.WriteToUDP([]byte(reply), remoteAddr)
+			}
+		}
+	}
+}
+
 // ──────────────────────────────────────────────
 //  Entry Point
 // ──────────────────────────────────────────────
 
 func main() {
 	srv := newServer()
+
+	// Start local UDP discovery responder
+	go startUDPResponder(srv)
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/room/create", srv.handleCreate)

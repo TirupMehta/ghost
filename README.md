@@ -104,7 +104,7 @@ On first run, Ghost will prompt for your handle and save it to `~/.ghost/config.
 
 1. Select **[2] Join an existing room with a token**
 2. Enter the 6-digit PIN
-3. Ghost derives the identical AES-256 key locally and connects to the room
+3. Ghost automatically broadcasts a UDP discovery packet on the local network to find the hosting device, derives the identical AES-256 key, and connects directly.
 
 ### Chat
 
