@@ -152,6 +152,20 @@ The installer:
 3. Installs to the local execution path (`~/.local/bin` on Unix, `~/.ghost/bin` on Windows) and adds it to the user PATH
 4. Runs handle configuration setup on first install
 
+### Uninstall
+
+Uninstall the client and clean up configuration using the single-command uninstaller:
+
+#### macOS / Linux (Bash)
+```bash
+curl -fsSL https://ghost.tirup.in/uninstall.sh | bash
+```
+
+#### Windows (PowerShell)
+```powershell
+irm https://ghost.tirup.in/uninstall.ps1 | iex
+```
+
 ---
 
 ## Configuration
