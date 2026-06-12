@@ -357,16 +357,6 @@ func main() {
 		http.ServeFile(w, r, "./installer/install.ps1")
 	})
 
-	// Serve the uninstall script directly
-	mux.HandleFunc("/uninstall.sh", func(w http.ResponseWriter, r *http.Request) {
-		http.ServeFile(w, r, "./installer/uninstall.sh")
-	})
-
-	// Serve the Windows PowerShell uninstall script directly
-	mux.HandleFunc("/uninstall.ps1", func(w http.ResponseWriter, r *http.Request) {
-		http.ServeFile(w, r, "./installer/uninstall.ps1")
-	})
-
 	// Serve compiled binaries for download
 	mux.Handle("/releases/", http.StripPrefix("/releases/", http.FileServer(http.Dir("./releases"))))
 

@@ -154,16 +154,10 @@ The installer:
 
 ### Uninstall
 
-Uninstall the client and clean up configuration using the single-command uninstaller:
+To uninstall the client and wipe all local configuration, simply run:
 
-#### macOS / Linux (Bash)
 ```bash
-curl -fsSL https://ghost.tirup.in/uninstall.sh | bash
-```
-
-#### Windows (PowerShell)
-```powershell
-irm https://ghost.tirup.in/uninstall.ps1 | iex
+ghost uninstall
 ```
 
 ---

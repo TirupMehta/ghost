@@ -13,8 +13,10 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"os/exec"
 	"os/signal"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"sync"
 	"syscall"
@@ -866,10 +868,87 @@ func mainMenu(cfg *Config) {
 }
 
 // ──────────────────────────────────────────────
+//  Self Uninstall Flow
+// ──────────────────────────────────────────────
+
+func selfUninstall() {
+	fmt.Println()
+	fmt.Print(bold(red("  ⚠️  Are you sure you want to uninstall Ghost and delete all configuration? [y/N]")) + ": ")
+	
+	reader := bufio.NewReader(os.Stdin)
+	ans, err := reader.ReadString('\n')
+	if err != nil {
+		return
+	}
+	ans = strings.TrimSpace(strings.ToLower(ans))
+	if ans != "y" && ans != "yes" {
+		fmt.Println("  Uninstall aborted.")
+		return
+	}
+
+	exePath, err := os.Executable()
+	if err != nil {
+		fmt.Printf("  %s Error locating executable: %v\n", red("✗"), err)
+		return
+	}
+
+	home, err := os.UserHomeDir()
+	if err != nil {
+		fmt.Printf("  %s Error locating home directory: %v\n", red("✗"), err)
+		return
+	}
+	configDir := filepath.Join(home, ".ghost")
+
+	fmt.Println("  Uninstalling...")
+
+	if runtime.GOOS == "windows" {
+		// On Windows, the running exe is locked. We spawn a detached PowerShell process to clean it up after we exit.
+		// Remove the config file first since it's not locked.
+		configJson := filepath.Join(configDir, "config.json")
+		_ = os.Remove(configJson)
+
+		binDir := filepath.Join(configDir, "bin")
+		cmd := fmt.Sprintf(
+			"Start-Sleep -Seconds 1; " +
+			"if (Test-Path '%s') { Remove-Item -Recurse -Force '%s' }; " +
+			"$uPath = [Environment]::GetEnvironmentVariable('Path', 'User'); " +
+			"if ($uPath -like '*%s*') { " +
+			"  $paths = $uPath -split ';' | Where-Object { $_ -ne '%s' -and $_ -ne '' }; " +
+			"  [Environment]::SetEnvironmentVariable('Path', ($paths -join ';'), 'User'); " +
+			"}",
+			configDir, configDir, binDir, binDir,
+		)
+
+		execCmd := exec.Command("powershell", "-NoProfile", "-WindowStyle", "Hidden", "-Command", cmd)
+		if err := execCmd.Start(); err != nil {
+			fmt.Printf("  %s Failed to spawn uninstaller: %v\n", red("✗"), err)
+			return
+		}
+
+		fmt.Println(green("  ✓ Local config cleared. Terminal cleanup scheduled."))
+		fmt.Println("  Goodbye.")
+		os.Exit(0)
+	} else {
+		// Unix-like (macOS / Linux) allows unlinking the running binary.
+		_ = os.Remove(exePath)
+		_ = os.RemoveAll(configDir)
+
+		fmt.Println(green("  ✓ Ghost CLI has been uninstalled and configuration wiped."))
+		fmt.Println("  Goodbye.")
+		os.Exit(0)
+	}
+}
+
+// ──────────────────────────────────────────────
 //  Entry Point
 // ──────────────────────────────────────────────
 
 func main() {
+	if len(os.Args) > 1 && (os.Args[1] == "uninstall" || os.Args[1] == "--uninstall") {
+		selfUninstall()
+		return
+	}
+
 	// Hidden flag used by the installer to trigger first-run setup without
 	// entering the main menu.
 	setupMode := len(os.Args) > 1 && os.Args[1] == "--setup"
