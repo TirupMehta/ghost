@@ -148,7 +148,7 @@ irm https://ghost.tirup.in/install.ps1 | iex
 
 The installer:
 1. Detects OS + CPU architecture (or defaults to Windows x64)
-2. Downloads the correct pre-built binary directly from your server's `/releases/` path
+2. Downloads the correct pre-built binary
 3. Installs to the local execution path (`~/.local/bin` on Unix, `~/.ghost/bin` on Windows) and adds it to the user PATH
 4. Runs handle configuration setup on first install
 

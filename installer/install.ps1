@@ -12,7 +12,7 @@ if (!(Test-Path $installDir)) {
 $exePath = "$installDir\ghost.exe"
 
 # 2. Download binary
-$downloadUrl = "https://ghost.tirup.in/releases/ghost_windows_amd64.exe"
+$downloadUrl = "https://ghost.tirup.in/ghost_windows_amd64.exe"
 Write-Host "  → Downloading Ghost binary..." -ForegroundColor Gray
 Invoke-WebRequest -Uri $downloadUrl -OutFile $exePath
 
