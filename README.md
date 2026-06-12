@@ -195,9 +195,8 @@ RestartSec=5
 WantedBy=multi-user.target
 ```
 
-> **Important:** Before distributing the client, make sure the `serverAddr` variable
-> in `client/main.go` points to your server's public address:
+> **Note:** By default, the client is configured to connect to your local device:
 > ```go
-> var serverAddr = "https://ghost.tirup.in"
+> var serverAddr = "http://localhost:8080"
 > ```
-> The client automatically uses `wss://` for HTTPS and `ws://` for HTTP. You can also override this locally for testing by setting the `GHOST_SERVER` environment variable.
+> Users can override this locally to connect to any peer/custom server by setting the `GHOST_SERVER` environment variable (e.g. `GHOST_SERVER=http://192.168.1.50:8080`). The client automatically uses `wss://` for HTTPS and `ws://` for HTTP.
