@@ -255,7 +255,7 @@ type Message struct {
 
 // serverAddr is the relay server base URL. Change this to point at your
 // deployed instance before distributing the binary.
-var serverAddr = "http://localhost:8080"
+var serverAddr = "https://ghost.tirup.in"
 
 func init() {
 	if envAddr := os.Getenv("GHOST_SERVER"); envAddr != "" {
