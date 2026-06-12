@@ -1,0 +1,8 @@
+# Compiled binaries
+*.exe
+/ghost-server
+/ghost
+
+# Logs
+*.log
+server.log
