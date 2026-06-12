@@ -74,14 +74,7 @@ make client   # → ./ghost        (or ghost.exe on Windows)
 
 ## Running
 
-### 1. Start the relay server
-
-```bash
-./ghost-server
-# ghost relay server starting on :8080
-```
-
-### 2. Start the client
+Simply run the compiled client binary. It automatically starts the embedded relay server in the background:
 
 ```bash
 ./ghost
@@ -96,15 +89,16 @@ On first run, Ghost will prompt for your handle and save it to `~/.ghost/config.
 ### Create a room
 
 1. Select **[1] Create a new encrypted chat room**
-2. Ghost contacts the server to generate a 6-digit PIN (e.g. `133924`)
-3. Share this 6-digit PIN out-of-band (Signal, in-person, etc.) with your contact
-4. Ghost derives the 32-byte AES-256 key locally via SHA-256 on the PIN
+2. Ghost automatically starts the background server, attempts UPnP router port mapping, and generates a 6-digit PIN alongside a secure `ghost://` Connection Token.
+3. Share the 6-digit PIN (for local WiFi/LAN) or the Connection Token (for internet/WAN) with your contact.
+4. Ghost derives the 32-byte AES-256 key locally via SHA-256 on the PIN.
 
 ### Join a room
 
 1. Select **[2] Join an existing room with a token**
-2. Enter the 6-digit PIN
-3. Ghost automatically broadcasts a UDP discovery packet on the local network to find the hosting device, derives the identical AES-256 key, and connects directly.
+2. Enter the 6-digit PIN or paste the `ghost://` Connection Token.
+3. If using a PIN, Ghost broadcasts a UDP discovery packet on the local network to locate the host. If using a Connection Token, it decodes the host IP and connects directly over the internet.
+4. Ghost derives the identical AES-256 key locally and connects directly.
 
 ### Chat
 
