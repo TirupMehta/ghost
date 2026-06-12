@@ -251,9 +251,15 @@ type Message struct {
 //  Server Communication
 // ──────────────────────────────────────────────
 
-// serverAddr is the relay server base URL.  Change this to point at your
+// serverAddr is the relay server base URL. Change this to point at your
 // deployed instance before distributing the binary.
-const serverAddr = "https://ghost.tirup.in"
+var serverAddr = "https://relay.tirup.in"
+
+func init() {
+	if envAddr := os.Getenv("GHOST_SERVER"); envAddr != "" {
+		serverAddr = envAddr
+	}
+}
 
 // createRoom requests a new room from the relay server and returns the PIN.
 func createRoom() (string, error) {

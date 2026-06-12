@@ -187,9 +187,9 @@ RestartSec=5
 WantedBy=multi-user.target
 ```
 
-> **Important:** Before distributing the client, make sure the `serverAddr` constant
+> **Important:** Before distributing the client, make sure the `serverAddr` variable
 > in `client/main.go` points to your server's public address:
 > ```go
-> const serverAddr = "https://ghost.tirup.in"
+> var serverAddr = "https://relay.tirup.in"
 > ```
-> The client automatically uses `wss://` for HTTPS and `ws://` for HTTP.
+> The client automatically uses `wss://` for HTTPS and `ws://` for HTTP. You can also override this locally for testing by setting the `GHOST_SERVER` environment variable.
