@@ -1,0 +1,56 @@
+2026/06/12 21:08:35 ghost relay server starting on :8080
+2026/06/12 21:08:42 room created: 802572
+2026/06/12 21:08:42 peer joined room 802572 (addr: [::1]:53124)
+2026/06/12 21:09:31 peer joined room 802572 (addr: [::1]:53126)
+2026/06/12 21:14:31 graceful leave in room 802572 from Mehta
+2026/06/12 21:14:31 peer left room 802572 – 1 remaining
+2026/06/12 21:14:32 graceful leave in room 802572 from Mehta
+2026/06/12 21:14:32 peer left room 802572 – 0 remaining
+2026/06/12 21:14:32 room 802572 annihilated – memory wiped
+2026/06/12 21:15:11 ghost relay server starting on :8080
+2026/06/12 21:15:33 ghost relay server starting on :8080
+2026/06/12 21:15:53 room created: 536024
+2026/06/12 21:15:53 peer joined room 536024 (addr: [::1]:61248)
+2026/06/12 21:16:02 peer joined room 536024 (addr: [::1]:61249)
+2026/06/12 21:18:31 graceful leave in room 536024 from Mehta
+2026/06/12 21:18:31 peer left room 536024 – 1 remaining
+2026/06/12 21:18:33 graceful leave in room 536024 from Mehta
+2026/06/12 21:18:33 peer left room 536024 – 0 remaining
+2026/06/12 21:18:33 room 536024 annihilated – memory wiped
+2026/06/12 21:18:39 ghost relay server starting on :8080
+2026/06/12 21:18:48 ghost relay server starting on :8080
+2026/06/12 21:19:04 room created: 994827
+2026/06/12 21:19:04 peer joined room 994827 (addr: [::1]:52602)
+2026/06/12 21:19:11 peer joined room 994827 (addr: [::1]:52603)
+2026/06/12 21:20:54 graceful leave in room 994827 from Mehta
+2026/06/12 21:20:54 graceful leave in room 994827 from Mehta
+2026/06/12 21:20:54 peer left room 994827 – 1 remaining
+2026/06/12 21:20:54 peer left room 994827 – 0 remaining
+2026/06/12 21:20:54 room 994827 annihilated – memory wiped
+2026/06/12 21:21:02 ghost relay server starting on :8080
+2026/06/12 21:21:05 ghost relay server starting on :8080
+2026/06/12 21:21:09 room created: 152354
+2026/06/12 21:21:09 peer joined room 152354 (addr: [::1]:62748)
+2026/06/12 21:24:14 graceful leave in room 152354 from Mehta
+2026/06/12 21:24:14 peer left room 152354 – 0 remaining
+2026/06/12 21:24:14 room 152354 annihilated – memory wiped
+2026/06/12 21:24:38 ghost relay server starting on :8080
+2026/06/12 21:24:43 ghost relay server starting on :8080
+2026/06/12 21:24:47 room created: 133924
+2026/06/12 21:24:47 peer joined room 133924 (addr: [::1]:62773)
+2026/06/12 21:26:10 graceful leave in room 133924 from Mehta
+2026/06/12 21:26:10 peer left room 133924 – 0 remaining
+2026/06/12 21:26:10 room 133924 annihilated – memory wiped
+2026/06/12 21:26:22 ghost relay server starting on :8080
+2026/06/12 21:26:26 ghost relay server starting on :8080
+2026/06/12 21:26:34 room created: 413969
+2026/06/12 21:26:34 peer joined room 413969 (addr: [::1]:64921)
+2026/06/12 21:27:05 peer joined room 413969 (addr: [::1]:60496)
+2026/06/12 21:27:14 graceful leave in room 413969 from Mehta
+2026/06/12 21:27:14 peer left room 413969 – 1 remaining
+2026/06/12 21:27:48 peer joined room 413969 (addr: [::1]:60497)
+2026/06/12 21:30:17 graceful leave in room 413969 from Checkmate
+2026/06/12 21:30:17 peer left room 413969 – 1 remaining
+2026/06/12 21:30:17 graceful leave in room 413969 from Mehta
+2026/06/12 21:30:17 peer left room 413969 – 0 remaining
+2026/06/12 21:30:17 room 413969 annihilated – memory wiped
