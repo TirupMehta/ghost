@@ -1,13 +1,16 @@
 package main
 
 import (
+	"bytes"
 	"crypto/rand"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"math/big"
 	"net"
 	"net/http"
+	"regexp"
 	"runtime"
 	"strings"
 	"sync"
@@ -198,7 +201,7 @@ var upgrader = websocket.Upgrader{
 }
 
 // handleCreate handles POST /room/create – returns a JSON body containing the
-// allocated PIN.
+// allocated PIN and public/local IP details.
 func (s *server) handleCreate(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
@@ -212,10 +215,19 @@ func (s *server) handleCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	ip := getPublicIP()
+	if ip == "" {
+		ip = getLocalIP()
+	}
+
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	_ = json.NewEncoder(w).Encode(map[string]string{"pin": pin})
-	log.Printf("room created: %s", pin)
+	_ = json.NewEncoder(w).Encode(map[string]string{
+		"pin":  pin,
+		"ip":   ip,
+		"port": "8080",
+	})
+	log.Printf("room created: %s (IP: %s)", pin, ip)
 }
 
 // handleWS handles GET /room/ws?pin=<PIN> – upgrades to WebSocket and drives
@@ -378,6 +390,16 @@ func startUDPResponder(srv *server) {
 func main() {
 	srv := newServer()
 
+	// Attempt UPnP port mapping for port 8080 in a goroutine so it doesn't block startup
+	go func() {
+		log.Println("[*] Attempting UPnP port mapping for port 8080...")
+		if MapPortUPnP(8080) {
+			log.Println("[+] UPnP port mapping successful! Port 8080 is now open on your router.")
+		} else {
+			log.Println("[!] UPnP port mapping failed/unsupported. If connecting across the internet, please forward port 8080 manually.")
+		}
+	}()
+
 	// Start local UDP discovery responder
 	go startUDPResponder(srv)
 
@@ -413,4 +435,154 @@ func main() {
 	if err := httpSrv.ListenAndServe(); err != nil {
 		log.Fatalf("server error: %v", err)
 	}
+}
+
+// ──────────────────────────────────────────────
+//  Dynamic Network and UPnP Helpers
+// ──────────────────────────────────────────────
+
+func getLocalIP() string {
+	addrs, err := net.InterfaceAddrs()
+	if err != nil {
+		return "127.0.0.1"
+	}
+	for _, address := range addrs {
+		if ipnet, ok := address.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
+			if ipnet.IP.To4() != nil {
+				return ipnet.IP.String()
+			}
+		}
+	}
+	return "127.0.0.1"
+}
+
+func getPublicIP() string {
+	client := http.Client{Timeout: 3 * time.Second}
+	resp, err := client.Get("https://api.ipify.org")
+	if err != nil {
+		resp, err = client.Get("https://icanhazip.com")
+		if err != nil {
+			return ""
+		}
+	}
+	defer resp.Body.Close()
+	ipBytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return ""
+	}
+	return strings.TrimSpace(string(ipBytes))
+}
+
+// MapPortUPnP attempts to map the specified port using UPnP SSDP + SOAP.
+func MapPortUPnP(port int) bool {
+	ssdpMsg := "M-SEARCH * HTTP/1.1\r\n" +
+		"HOST: 239.255.255.250:1900\r\n" +
+		"ST: urn:schemas-upnp-org:device:InternetGatewayDevice:1\r\n" +
+		"MAN: \"ssdp:discover\"\r\n" +
+		"MX: 3\r\n\r\n"
+
+	raddr, err := net.ResolveUDPAddr("udp", "239.255.255.250:1900")
+	if err != nil {
+		return false
+	}
+	conn, err := net.ListenUDP("udp", &net.UDPAddr{IP: net.IPv4zero, Port: 0})
+	if err != nil {
+		return false
+	}
+	defer conn.Close()
+
+	_, err = conn.WriteTo([]byte(ssdpMsg), raddr)
+	if err != nil {
+		return false
+	}
+
+	_ = conn.SetReadDeadline(time.Now().Add(2 * time.Second))
+	buf := make([]byte, 2048)
+	n, _, err := conn.ReadFrom(buf)
+	if err != nil {
+		return false
+	}
+
+	resp := string(buf[:n])
+	locReg := regexp.MustCompile(`(?i)LOCATION:\s*(http://[^\r\n]+)`)
+	locMatch := locReg.FindStringSubmatch(resp)
+	if len(locMatch) < 2 {
+		return false
+	}
+	locationURL := locMatch[1]
+
+	httpClient := http.Client{Timeout: 3 * time.Second}
+	xmlResp, err := httpClient.Get(locationURL)
+	if err != nil {
+		return false
+	}
+	defer xmlResp.Body.Close()
+	xmlData, err := io.ReadAll(xmlResp.Body)
+	if err != nil {
+		return false
+	}
+
+	controlReg := regexp.MustCompile(`<serviceType>urn:schemas-upnp-org:service:(WANIPConnection|WANPPPConnection):1</serviceType>[\s\S]*?<controlURL>([^<]+)</controlURL>`)
+	controlMatch := controlReg.FindStringSubmatch(string(xmlData))
+	if len(controlMatch) < 3 {
+		return false
+	}
+	serviceType := "urn:schemas-upnp-org:service:" + controlMatch[1] + ":1"
+	controlPath := controlMatch[2]
+
+	baseURLReg := regexp.MustCompile(`(http://[^/]+)`)
+	baseURLMatch := baseURLReg.FindStringSubmatch(locationURL)
+	if len(baseURLMatch) < 2 {
+		return false
+	}
+	baseURL := baseURLMatch[1]
+	controlURL := baseURL + controlPath
+	if !strings.HasPrefix(controlPath, "/") {
+		controlURL = baseURL + "/" + controlPath
+	}
+
+	gatewayIPReg := regexp.MustCompile(`http://([^:]+)`)
+	gatewayIPMatch := gatewayIPReg.FindStringSubmatch(baseURL)
+	if len(gatewayIPMatch) < 2 {
+		return false
+	}
+	gatewayIP := gatewayIPMatch[1]
+
+	localIP := "127.0.0.1"
+	dialConn, err := net.Dial("udp", gatewayIP+":80")
+	if err == nil {
+		localIP = dialConn.LocalAddr().(*net.UDPAddr).IP.String()
+		dialConn.Close()
+	}
+
+	soapBody := `<?xml version="1.0"?>
+<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
+<s:Body>
+<u:AddPortMapping xmlns:u="` + serviceType + `">
+  <NewRemoteHost></NewRemoteHost>
+  <NewExternalPort>` + fmt.Sprintf("%d", port) + `</NewExternalPort>
+  <NewProtocol>TCP</NewProtocol>
+  <NewInternalPort>` + fmt.Sprintf("%d", port) + `</NewInternalPort>
+  <NewInternalClient>` + localIP + `</NewInternalClient>
+  <NewEnabled>1</NewEnabled>
+  <NewPortMappingDescription>Ghost Chat</NewPortMappingDescription>
+  <NewLeaseDuration>0</NewLeaseDuration>
+</u:AddPortMapping>
+</s:Body>
+</s:Envelope>`
+
+	req, err := http.NewRequest("POST", controlURL, bytes.NewBufferString(soapBody))
+	if err != nil {
+		return false
+	}
+	req.Header.Set("Content-Type", "text/xml; charset=\"utf-8\"")
+	req.Header.Set("SOAPAction", "\""+serviceType+"#AddPortMapping\"")
+
+	soapResp, err := httpClient.Do(req)
+	if err != nil {
+		return false
+	}
+	defer soapResp.Body.Close()
+
+	return soapResp.StatusCode == http.StatusOK
 }
