@@ -253,7 +253,7 @@ type Message struct {
 
 // serverAddr is the relay server base URL.  Change this to point at your
 // deployed instance before distributing the binary.
-const serverAddr = "http://localhost:8080"
+const serverAddr = "https://ghost.tirup.in"
 
 // createRoom requests a new room from the relay server and returns the PIN.
 func createRoom() (string, error) {

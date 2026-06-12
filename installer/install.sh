@@ -14,9 +14,9 @@ set -euo pipefail
 #  Configuration — edit these before distributing
 # ──────────────────────────────────────────────
 
-RELEASE_BASE_URL="https://your-domain.com/releases/ghost"
+RELEASE_BASE_URL="https://ghost.tirup.in/releases"
 BINARY_NAME="ghost"
-INSTALL_VERSION="latest"   # can be overridden: GHOST_VERSION=1.2.0 bash install.sh
+INSTALL_VERSION="latest"   # can be overridden: GHOST_VERSION=1.0.0 bash install.sh
 
 # ──────────────────────────────────────────────
 #  ANSI Colour Helpers

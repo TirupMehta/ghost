@@ -134,16 +134,15 @@ On first run, Ghost will prompt for your handle and save it to `~/.ghost/config.
 
 ## Installer
 
-Edit `RELEASE_BASE_URL` in `installer/install.sh` to point at your binary host,
-then distribute with:
+Distribute and install the client using the single-command bash installer hosted directly on your server:
 
 ```bash
-curl -fsSL https://your-domain.com/install.sh | bash
+curl -fsSL https://ghost.tirup.in/install.sh | bash
 ```
 
 The installer:
 1. Detects OS + CPU architecture (linux/darwin/windows × amd64/arm64/arm/386)
-2. Downloads the correct pre-built binary
+2. Downloads the correct pre-built binary directly from your server's `/releases/` path
 3. Installs to `~/.local/bin`, `~/bin`, or `/usr/local/bin`
 4. Runs `ghost --setup` to configure the handle on first install
 
@@ -182,9 +181,9 @@ RestartSec=5
 WantedBy=multi-user.target
 ```
 
-> **Important:** Before distributing the client, update the `serverAddr` constant
-> in `client/main.go` to your server's public address:
+> **Important:** Before distributing the client, make sure the `serverAddr` constant
+> in `client/main.go` points to your server's public address:
 > ```go
-> const serverAddr = "https://your-server.example.com"
+> const serverAddr = "https://ghost.tirup.in"
 > ```
 > The client automatically uses `wss://` for HTTPS and `ws://` for HTTP.

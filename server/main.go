@@ -347,6 +347,14 @@ func main() {
 	mux.HandleFunc("/room/ws", srv.handleWS)
 	mux.HandleFunc("/health", handleHealth)
 
+	// Serve the install script directly
+	mux.HandleFunc("/install.sh", func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFile(w, r, "./installer/install.sh")
+	})
+
+	// Serve compiled binaries for download
+	mux.Handle("/releases/", http.StripPrefix("/releases/", http.FileServer(http.Dir("./releases"))))
+
 	addr := ":8080"
 	log.Printf("ghost relay server starting on %s", addr)
 
