@@ -27,15 +27,15 @@ deleted from memory immediately.
 │  │  AES key      │           │  AES key      │          │
 │  │  (RAM only)   │           │  (RAM only)   │          │
 │  └──────┬────────┘           └────────┬──────┘          │
-│         │ WebSocket (ciphertext only) │                  │
-│         ▼                            ▼                   │
-│  ┌──────────────────────────────────────────────┐        │
-│  │        Ghost Relay Server  (:8080)           │        │
-│  │                                              │        │
+│         │ WebSocket (ciphertext only) │                 │
+│         ▼                             ▼                 │
+│  ┌─────────────────────────────────────────────┐        │
+│  │        Ghost Relay Server  (:8080)          │        │
+│  │                                             │        │
 │  │  In-memory rooms (sync.RWMutex protected)   │        │
 │  │  Max 100-message rolling history per room   │        │
 │  │  Room → annihilated when last peer leaves   │        │
-│  └──────────────────────────────────────────────┘        │
+│  └─────────────────────────────────────────────┘        │
 └─────────────────────────────────────────────────────────┘
 ```
 
