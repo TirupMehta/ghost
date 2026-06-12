@@ -194,3 +194,12 @@ WantedBy=multi-user.target
 > var serverAddr = "http://localhost:8080"
 > ```
 > Users can override this locally to connect to any peer/custom server by setting the `GHOST_SERVER` environment variable (e.g. `GHOST_SERVER=http://192.168.1.50:8080`). The client automatically uses `wss://` for HTTPS and `ws://` for HTTP.
+
+---
+
+## Author & Contributions
+
+**Ghost** is open-source software created and developed by [Tirup Mehta](https://github.com/TirupMehta).
+
+*   **Contributing**: Contributions, feedback, and pull requests are highly welcome! Feel free to open issues or submit code improvements to help make Ghost even better.
+*   **License**: This project is licensed under the [MIT License](LICENSE).
